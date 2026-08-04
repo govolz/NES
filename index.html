@@ -8,6 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NES Outages">
+<link rel="apple-touch-icon" href="https://cdn.brandfetch.io/idTKChFcQd/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX">
 <title>NES Outage Monitor</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
@@ -17,7 +18,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#eef3f7; --surface:#ffffff; --surface-2:#f3f7fb; --line:#dde5ee;
+    --bg:#eef3f7; --surface:#ffffff; --surface-2:#f3f7fb; --line:#dde5ee; --fs:.9;
     --navy:#162E50; --ink:#1a2a40; --text:#243449; --muted:#5f7285; --muted-2:#93a3b5;
     --cerulean:#097CAE; --cerulean-l:#46c7ec; --orange:#E9692A; --home:#7c3aed;
     --age-green:#18b26b; --age-blue:#2f8fd6; --age-red:#e23d4c;
@@ -39,38 +40,45 @@
   header.live::after{opacity:.9;animation:sweep 3s linear infinite}
   @keyframes sweep{0%{background-position:-100% 0}100%{background-position:200% 0}}
   .brand{display:flex;flex-direction:column;gap:2px;margin-right:auto}
-  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.55)}
-  .title{font-size:20px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  .eyebrow{font-family:var(--mono);font-size:calc(9.5px*var(--fs));letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+  .title{font-size:calc(15px*var(--fs));font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px}
   .bolt{color:var(--orange)}
-  .ver{font-family:var(--mono);font-size:10.5px;font-weight:500;color:rgba(255,255,255,.8);
+  .ver{font-family:var(--mono);font-size:calc(10.5px*var(--fs));font-weight:500;color:rgba(255,255,255,.8);
     background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:6px;
     padding:2px 8px;vertical-align:middle;letter-spacing:.08em;font-variant-numeric:tabular-nums}
   .ver-b{color:var(--cerulean-l);font-weight:600}
-  .status-line{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.7)}
+  .status-line{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:calc(12px*var(--fs));color:rgba(255,255,255,.7)}
   .dot-live{width:8px;height:8px;border-radius:50%;background:var(--cerulean-l);box-shadow:0 0 0 0 var(--cerulean-l);animation:pulseDot 2s infinite}
   .dot-live.stale{background:var(--orange);animation:none;box-shadow:none}
   @keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(70,199,236,.55)}70%{box-shadow:0 0 0 7px rgba(70,199,236,0)}100%{box-shadow:0 0 0 0 rgba(70,199,236,0)}}
   .live-wrap{display:flex;align-items:center;gap:7px}
-  .refresh-btn{font-family:var(--mono);font-size:12px;color:#fff;cursor:pointer;
+  .refresh-btn{font-family:var(--mono);font-size:calc(12px*var(--fs));color:#fff;cursor:pointer;
     background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:7px;
     padding:7px 12px;display:flex;align-items:center;gap:7px;transition:.15s}
   .refresh-btn:hover{border-color:var(--cerulean-l);background:rgba(70,199,236,.15)}
   .refresh-btn:disabled{opacity:.5;cursor:wait}
   .refresh-btn svg{width:13px;height:13px}
+  .upd{font-family:var(--mono);font-size:calc(12px*var(--fs));color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:7px;padding:7px 9px;cursor:pointer}
+  .upd:focus{outline:none;border-color:var(--cerulean-l)}
+  .upd option{color:#1a2a40}
+  .tsize{display:flex;align-items:center;gap:5px;font-family:var(--mono);color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:7px;padding:6px 10px;cursor:pointer;line-height:1}
+  .tsize:hover{border-color:var(--cerulean-l);background:rgba(70,199,236,.14)}
+  .tsize .ts-a{font-weight:700;font-size:calc(15px*var(--fs))}
+  .tsize .ts-lvl{font-size:calc(10px*var(--fs));color:var(--cerulean-l);font-weight:600}
   .spin{animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
 
   /* Stats */
-  .stats{display:grid;grid-template-columns:1.5fr repeat(4,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+  .stats{display:grid;grid-template-columns:1.5fr repeat(5,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
   .stat{background:var(--surface);padding:13px 20px;display:flex;flex-direction:column;gap:3px}
-  .stat .label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2)}
-  .stat .value{font-size:30px;font-weight:600;line-height:1;letter-spacing:-.02em;color:var(--navy);font-variant-numeric:tabular-nums}
-  .stat .sub{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .stat .label{font-family:var(--mono);font-size:calc(9.5px*var(--fs));letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2)}
+  .stat .value{font-size:calc(23px*var(--fs));font-weight:600;line-height:1;letter-spacing:-.02em;color:var(--navy);font-variant-numeric:tabular-nums}
+  .stat .sub{font-family:var(--mono);font-size:calc(11px*var(--fs));color:var(--muted)}
   .stat.hero{background:linear-gradient(180deg,#fff,#f7fafd)}
-  .stat.hero .value{font-size:40px}
+  .stat.hero .value{font-size:calc(30px*var(--fs))}
   .stat.hero .value .pulse{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--cerulean);margin-left:10px;vertical-align:middle;animation:pulseDot 2s infinite}
   .split{display:flex;gap:14px;margin-top:2px}
-  .split span{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .split span{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:calc(12px*var(--fs));color:var(--muted)}
   .swatch{width:9px;height:9px;border-radius:2px}
   .sw-un{background:var(--orange)} .sw-as{background:var(--cerulean)}
 
@@ -83,30 +91,30 @@
   .locate{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:9px}
   .locate .lrow{display:flex;gap:7px}
   .locate input{flex:1;background:var(--surface-2);border:1px solid var(--line);color:var(--ink);
-    font-family:var(--sans);font-size:13px;border-radius:8px;padding:9px 11px}
+    font-family:var(--sans);font-size:calc(13px*var(--fs));border-radius:8px;padding:9px 11px}
   .locate input:focus{outline:none;border-color:var(--cerulean);background:#fff}
   .locate input::placeholder{color:var(--muted-2)}
-  .locate .go{background:var(--cerulean);border:none;color:#fff;font-family:var(--mono);font-weight:600;font-size:12px;border-radius:8px;padding:0 15px;cursor:pointer}
+  .locate .go{background:var(--cerulean);border:none;color:#fff;font-family:var(--mono);font-weight:600;font-size:calc(12px*var(--fs));border-radius:8px;padding:0 15px;cursor:pointer}
   .locate .go:hover{background:var(--cerulean-d,#0a6c98);filter:brightness(1.05)}
-  .locate .me{background:var(--surface-2);border:1px solid var(--line);color:var(--muted);font-family:var(--mono);font-size:11px;border-radius:8px;padding:7px 10px;cursor:pointer;display:flex;align-items:center;gap:6px;align-self:flex-start}
+  .locate .me{background:var(--surface-2);border:1px solid var(--line);color:var(--muted);font-family:var(--mono);font-size:calc(11px*var(--fs));border-radius:8px;padding:7px 10px;cursor:pointer;display:flex;align-items:center;gap:6px;align-self:flex-start}
   .locate .me:hover{border-color:var(--home);color:var(--home)}
   .locate .me svg{width:12px;height:12px}
-  .lresult{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.5;display:none}
+  .lresult{font-family:var(--mono);font-size:calc(12px*var(--fs));color:var(--muted);line-height:1.5;display:none}
   .lresult.show{display:block}
   .lresult b{color:var(--ink);font-weight:600}
   .lresult .ok{color:var(--age-green)} .lresult .hit{color:var(--orange)}
-  .lresult .clear{color:var(--home);cursor:pointer;text-decoration:underline;font-size:11px}
+  .lresult .clear{color:var(--home);cursor:pointer;text-decoration:underline;font-size:calc(11px*var(--fs))}
 
   /* List */
   .panel-head{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
-  .panel-head h2{margin:0 0 10px;font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink);display:flex;justify-content:space-between;align-items:baseline}
-  .panel-head h2 .count{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .panel-head h2{margin:0 0 10px;font-size:calc(13px*var(--fs));font-weight:600;letter-spacing:.02em;color:var(--ink);display:flex;justify-content:space-between;align-items:baseline}
+  .panel-head h2 .count{font-family:var(--mono);font-size:calc(12px*var(--fs));color:var(--muted)}
   .controls{display:flex;gap:6px;flex-wrap:wrap}
   .seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:7px;overflow:hidden}
-  .seg button{background:none;border:none;color:var(--muted);font-family:var(--mono);font-size:11px;padding:6px 10px;cursor:pointer;transition:.12s}
+  .seg button{background:none;border:none;color:var(--muted);font-family:var(--mono);font-size:calc(11px*var(--fs));padding:6px 10px;cursor:pointer;transition:.12s}
   .seg button.on{background:#fff;color:var(--cerulean);box-shadow:inset 0 0 0 1px var(--cerulean)}
   .seg button:hover:not(.on){color:var(--ink)}
-  select.sort{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);font-size:11px;border-radius:7px;padding:6px 8px;cursor:pointer;margin-left:auto}
+  select.sort{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);font-family:var(--mono);font-size:calc(11px*var(--fs));border-radius:7px;padding:6px 8px;cursor:pointer;margin-left:auto}
   .list{flex:1;overflow-y:auto;padding:6px}
   .list::-webkit-scrollbar{width:9px}
   .list::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
@@ -116,21 +124,21 @@
   .item .row1{display:flex;align-items:center;gap:9px}
   .item .sdot{width:11px;height:11px;border-radius:50%;flex:none}
   .item .sdot.tri{width:0;height:0;border-radius:0;background:none!important;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid var(--age-red)}
-  .item .people{font-size:16px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
-  .item .people small{font-size:11px;color:var(--muted);font-weight:400;margin-left:4px}
-  .item .st{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border-radius:5px}
+  .item .people{font-size:calc(16px*var(--fs));font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+  .item .people small{font-size:calc(11px*var(--fs));color:var(--muted);font-weight:400;margin-left:4px}
+  .item .st{margin-left:auto;font-family:var(--mono);font-size:calc(10px*var(--fs));letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border-radius:5px}
   .st.un{color:var(--orange);background:rgba(233,105,42,.12)}
   .st.as{color:var(--cerulean);background:rgba(9,124,174,.12)}
-  .item .row2{display:flex;gap:13px;font-family:var(--mono);font-size:11px;color:var(--muted);flex-wrap:wrap}
+  .item .row2{display:flex;gap:13px;font-family:var(--mono);font-size:calc(11px*var(--fs));color:var(--muted);flex-wrap:wrap}
   .item .row2 .etr.passed{color:var(--orange);font-weight:600}
   .item .row2 .etr.soon{color:var(--cerulean)}
   .item .row2 .dist{color:var(--home)}
   .item .id{color:var(--muted-2)}
   .empty{padding:50px 24px;text-align:center;color:var(--muted)}
-  .empty .big{font-size:15px;color:var(--age-green);font-weight:600;margin-bottom:6px}
+  .empty .big{font-size:calc(15px*var(--fs));color:var(--age-green);font-weight:600;margin-bottom:6px}
 
   /* Banner */
-  .banner{display:none;padding:9px 22px;font-family:var(--mono);font-size:12px;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+  .banner{display:none;padding:9px 22px;font-family:var(--mono);font-size:calc(12px*var(--fs));align-items:center;gap:10px;border-bottom:1px solid var(--line)}
   .banner.show{display:flex}
   .banner.warn{background:rgba(233,105,42,.1);color:var(--orange)}
 
@@ -143,32 +151,60 @@
   /* Cluster */
   .cluster{border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;
     font-family:var(--mono);font-weight:600;border:2px solid #fff;box-shadow:0 2px 9px rgba(0,0,0,.3)}
-  .cluster span{font-size:12px;line-height:1}
-  .cluster.c1{background:rgba(9,124,174,.92)}
-  .cluster.c2{background:rgba(22,46,80,.94)}
-  .cluster.c3{background:rgba(233,105,42,.96)}
+  .cluster span{font-size:calc(12px*var(--fs));line-height:1}
+  .cluster.cl-green{background:rgba(24,178,107,.92)}
+  .cluster.cl-blue{background:rgba(47,143,214,.92)}
+  .cluster.cl-red{background:rgba(226,61,76,.95)}
+  .cluster.blink-slow{animation:blink 2s ease-in-out infinite}
+  .cluster.blink-fast{animation:blink .55s ease-in-out infinite}
 
   /* Popup */
   .leaflet-popup-content-wrapper{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:11px;box-shadow:0 10px 34px rgba(22,46,80,.22)}
   .leaflet-popup-tip{background:#fff;border:1px solid var(--line)}
   .leaflet-popup-content{margin:13px 15px;font-family:var(--sans)}
-  .pop h3{margin:0 0 8px;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:8px}
-  .pop .pst{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:5px}
+  .pop h3{margin:0 0 8px;font-size:calc(15px*var(--fs));color:var(--ink);display:flex;align-items:center;gap:8px}
+  .pop .pst{font-family:var(--mono);font-size:calc(10px*var(--fs));letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:5px}
   .pop .pst.un{color:var(--orange);background:rgba(233,105,42,.12)} .pop .pst.as{color:var(--cerulean);background:rgba(9,124,174,.12)}
-  .pop table{border-collapse:collapse;font-family:var(--mono);font-size:12px}
+  .pop table{border-collapse:collapse;font-family:var(--mono);font-size:calc(12px*var(--fs))}
   .pop td{padding:2px 0;color:var(--ink)} .pop td:first-child{color:var(--muted);padding-right:16px}
 
   /* Legend */
-  .legend{background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-family:var(--mono);font-size:11px;color:var(--ink);box-shadow:0 2px 12px rgba(22,46,80,.14);line-height:1.7}
-  .legend .lg-t{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);margin-bottom:3px}
+  .legend{background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-family:var(--mono);font-size:calc(11px*var(--fs));color:var(--ink);box-shadow:0 2px 12px rgba(22,46,80,.14);line-height:1.7}
+  .legend .lg-head{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;padding:3px 5px;margin:-3px -5px;border-radius:6px}
+  .legend .lg-head:hover{background:rgba(22,46,80,.06)}
+  .legend .lg-head:active{background:rgba(22,46,80,.11)}
+  .legend .lg-title{font-size:calc(10px*var(--fs));letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);font-weight:600}
+  .legend .lg-toggle{width:19px;height:19px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:5px;font-size:calc(14px*var(--fs));font-weight:700;line-height:1;color:var(--muted)}
+  .legend .lg-toggle::before{content:"–"}
+  .legend.collapsed .lg-toggle::before{content:"+"}
+  .legend.collapsed .lg-body{display:none}
+  .legend .lg-body{margin-top:8px}
+  .legend .lg-t{font-size:calc(10px*var(--fs));letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2);margin-bottom:3px}
   .lg-row{display:flex;align-items:center}
   .lg-mk{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:7px;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
   .lg-mk.grn{background:var(--age-green)} .lg-mk.blu{background:var(--age-blue)} .lg-mk.red{background:var(--age-red)}
   .lg-tri{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid var(--age-red);display:inline-block;margin-right:7px}
   .lg-sep{height:1px;background:var(--line);margin:6px 0}
-  .lg-sm{color:var(--muted);font-size:10.5px}
+  .lg-sm{color:var(--muted);font-size:calc(10.5px*var(--fs))}
 
   .homepin{width:20px;height:20px;border-radius:50% 50% 50% 0;background:var(--home);transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+
+  .logo{height:24px;width:auto;vertical-align:middle;display:inline-block;filter:brightness(0) invert(1)}
+  .radarctl{background:var(--navy);color:#fff;border-radius:10px;padding:9px 11px;width:174px;
+    box-shadow:0 2px 13px rgba(22,46,80,.3);font-family:var(--mono)}
+  .radarctl .rc-head{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;padding:3px 5px;margin:-3px -5px;border-radius:6px}
+  .radarctl .rc-head:hover{background:rgba(255,255,255,.09)}
+  .radarctl .rc-head:active{background:rgba(255,255,255,.16)}
+  .radarctl .rc-title{font-size:calc(11px*var(--fs));font-weight:600;letter-spacing:.02em}
+  .radarctl .rc-toggle{width:19px;height:19px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.35);border-radius:5px;font-size:calc(14px*var(--fs));font-weight:700;line-height:1}
+  .radarctl .rc-toggle::before{content:"–"}
+  .radarctl.collapsed .rc-toggle::before{content:"+"}
+  .radarctl.collapsed .rc-body{display:none}
+  .radarctl .rc-body{margin-top:8px}
+  .radarctl .rc-time-row{margin-bottom:4px}
+  .radarctl .rc-time{font-size:calc(10.5px*var(--fs));color:var(--cerulean-l);white-space:nowrap}
+  .radarctl input[type=range]{width:100%;accent-color:var(--cerulean-l);cursor:pointer;margin:3px 0;height:20px}
+  .radarctl .rc-foot{display:flex;justify-content:space-between;font-size:calc(10.5px*var(--fs));color:rgba(255,255,255,.6);margin-top:2px}
 
   @media(max-width:900px){
     body{overflow:auto}
@@ -179,34 +215,35 @@
     .stats{grid-template-columns:1fr 1fr}
     .stat{padding:12px 15px}
     .stat.hero{grid-column:1/-1}
-    .stat .value{font-size:26px}
-    .stat.hero .value{font-size:34px}
+    .stat .value{font-size:calc(26px*var(--fs))}
+    .stat.hero .value{font-size:calc(34px*var(--fs))}
     .main{grid-template-columns:1fr;height:auto}
     #map{height:50vh;min-height:300px}
     .panel{border-left:none;border-top:1px solid var(--line)}
     .list{max-height:none;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
-    .locate input{font-size:16px;padding:12px 12px}
-    .locate .go{padding:0 18px;min-height:46px;font-size:13px}
-    .locate .me{padding:11px 13px;min-height:42px;font-size:12px}
+    .locate input{font-size:calc(16px*var(--fs));padding:12px 12px}
+    .locate .go{padding:0 18px;min-height:46px;font-size:calc(13px*var(--fs))}
+    .locate .me{padding:11px 13px;min-height:42px;font-size:calc(12px*var(--fs))}
     .controls{gap:8px}
     .seg{flex-basis:100%}
-    .seg button{flex:1;padding:11px 6px;font-size:11.5px;text-align:center;white-space:nowrap}
-    select.sort{margin-left:0;flex-basis:100%;padding:11px 10px;font-size:13px}
+    .seg button{flex:1;padding:11px 6px;font-size:calc(11.5px*var(--fs));text-align:center;white-space:nowrap}
+    select.sort{margin-left:0;flex-basis:100%;padding:11px 10px;font-size:calc(13px*var(--fs))}
     .item{padding:13px 12px}
-    .legend{font-size:10.5px;padding:8px 10px;line-height:1.6}
+    .legend{font-size:calc(10.5px*var(--fs));padding:8px 10px;line-height:1.6}
     .leaflet-popup-content{margin:12px 14px;max-width:70vw}
     .leaflet-control-zoom{margin-bottom:70px!important}
+    .radarctl{width:150px;padding:8px 10px}
   }
   @media(max-width:560px){
     header{padding-top:calc(11px + env(safe-area-inset-top,0px));gap:10px 14px}
-    .title{font-size:18px}
-    .eyebrow{font-size:9.5px;letter-spacing:.18em}
-    .status-line{font-size:11px;gap:12px}
+    .title{font-size:calc(18px*var(--fs))}
+    .eyebrow{font-size:calc(9.5px*var(--fs));letter-spacing:.18em}
+    .status-line{font-size:calc(11px*var(--fs));gap:12px}
     #countdown{display:none}
     .stat{padding:11px 13px}
-    .stat .label{font-size:9.5px;letter-spacing:.1em}
-    .stat .value{font-size:22px}
-    .stat.hero .value{font-size:30px}
+    .stat .label{font-size:calc(9.5px*var(--fs));letter-spacing:.1em}
+    .stat .value{font-size:calc(22px*var(--fs))}
+    .stat.hero .value{font-size:calc(30px*var(--fs))}
     .split{flex-direction:column;gap:4px}
     #map{height:46vh;min-height:280px}
   }
@@ -217,13 +254,19 @@
   <header id="header">
     <div class="brand">
       <span class="eyebrow">Nashville Electric Service · Live Grid Status</span>
-      <span class="title"><span class="bolt">⚡</span> NES Outage Monitor <span class="ver" id="ver"></span></span>
+      <span class="title"><img class="logo" src="https://cdn.brandfetch.io/idTKChFcQd/theme/dark/logo.svg?c=1bxid64Mup7aczewSAYMX" alt="NES" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'bolt',textContent:'⚡'}))"> Outage Monitor <span class="ver" id="ver"></span></span>
     </div>
     <div class="status-line">
       <span class="live-wrap"><span class="dot-live" id="liveDot"></span><span id="liveText">Connecting…</span></span>
       <span id="updated">—</span>
       <span id="countdown"></span>
     </div>
+    <button class="tsize" id="tsizeBtn" title="Text size"><span class="ts-a">A</span><span class="ts-lvl" id="tsizeLvl">S</span></button>
+    <select class="upd" id="updSel" title="Auto-update interval">
+      <option value="60000">1 min</option>
+      <option value="300000">5 min</option>
+      <option value="600000" selected>10 min</option>
+    </select>
     <button class="refresh-btn" id="refreshBtn">
       <svg id="refreshIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>
       Refresh
@@ -246,6 +289,8 @@
       <span class="value" id="sPassed">—</span><span class="sub">still restoring</span></div>
     <div class="stat"><span class="label">Median duration</span>
       <span class="value" id="sMed">—</span><span class="sub">so far</span></div>
+    <div class="stat"><span class="label">Weighted avg out</span>
+      <span class="value" id="sCmin">—</span><span class="sub">min / customer · live</span></div>
   </div>
 
   <div class="main">
@@ -273,7 +318,7 @@
           <select class="sort" id="sort">
             <option value="people">Most customers</option>
             <option value="new">Newest</option>
-            <option value="old">Longest out</option>
+            <option value="old" selected>Longest out</option>
             <option value="etr">Soonest ETR</option>
             <option value="dist">Nearest me</option>
           </select>
@@ -290,7 +335,7 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.04c";
+const VERSION="26.08.04k";
 document.getElementById('ver').innerHTML=VERSION.slice(0,-1)+'<span class="ver-b">'+VERSION.slice(-1)+'</span>';
 
 const AGE={green:'#18b26b',blue:'#2f8fd6',red:'#e23d4c'};
@@ -310,17 +355,22 @@ function sampleData(){const n=Date.now(),M=60000;return [
   {id:11,startTime:n-12*M,etrTime:n+70*M,numPeople:2,status:'Assigned',cause:'',identifier:'D-1011',latitude:36.1600,longitude:-86.7840}
 ];}
 
-const map=L.map('map',{zoomControl:true,attributionControl:true}).setView([36.16,-86.78],10);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-  {attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+const map=L.map('map',{zoomControl:true,attributionControl:true,maxZoom:18}).setView([36.16,-86.78],10);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  {attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:20,zIndex:1}).addTo(map);
 
 const clusterGroup=L.markerClusterGroup({
   maxClusterRadius:46,spiderfyOnMaxZoom:true,showCoverageOnHover:false,
   iconCreateFunction:c=>{
-    const sum=c.getAllChildMarkers().reduce((s,m)=>s+(m.options.people||0),0);
+    const kids=c.getAllChildMarkers();
+    let sum=0,aMax=0,eMax=0;
+    kids.forEach(m=>{const e=m.options.ev;if(!e)return;sum+=e.numPeople||0;
+      aMax=Math.max(aMax,ageRank(e.startTime));
+      const st=etrInfo(e).state;eMax=Math.max(eMax,st==='passed'?2:st==='soon'?1:0);});
     const size=sum>=500?54:sum>=100?46:sum>=20?40:34;
-    const tier=sum>=500?'c3':sum>=100?'c2':'c1';
-    return L.divIcon({html:`<div class="cluster ${tier}" style="width:${size}px;height:${size}px"><span>${fmt(sum)}</span></div>`,className:'',iconSize:[size,size]});
+    const col=aMax>=2?'cl-red':aMax===1?'cl-blue':'cl-green';
+    const bl=eMax===2?'blink-fast':eMax===1?'blink-slow':'';
+    return L.divIcon({html:`<div class="cluster ${col} ${bl}" style="width:${size}px;height:${size}px"><span>${fmt(sum)}</span></div>`,className:'',iconSize:[size,size]});
   }
 });
 map.addLayer(clusterGroup);
@@ -328,20 +378,72 @@ map.addLayer(clusterGroup);
 // Legend
 const legend=L.control({position:'bottomleft'});
 legend.onAdd=function(){const d=L.DomUtil.create('div','legend');
-  d.innerHTML='<div class="lg-t">Time out</div>'
+  d.innerHTML='<div class="lg-head"><span class="lg-title">Legend</span><span class="lg-toggle"></span></div>'
+    +'<div class="lg-body">'
+    +'<div class="lg-t">Time out</div>'
     +'<div class="lg-row"><span class="lg-mk grn"></span>Under 10 min</div>'
     +'<div class="lg-row"><span class="lg-mk blu"></span>10 min – 2 hr</div>'
     +'<div class="lg-row"><span class="lg-mk red"></span>2 – 3 hr</div>'
     +'<div class="lg-row"><span class="lg-tri"></span>Over 3 hr</div>'
     +'<div class="lg-sep"></div>'
-    +'<div class="lg-row lg-sm">Blink · slow = ETR within 30 min · fast = past ETR</div>';
+    +'<div class="lg-row lg-sm">Blink · slow = ETR within 30 min · fast = past ETR</div>'
+    +'</div>';
+  L.DomEvent.disableClickPropagation(d);
+  d.querySelector('.lg-head').addEventListener('click',()=>d.classList.toggle('collapsed'));
+  if(window.innerWidth<=560)d.classList.add('collapsed');
   return d;};
 legend.addTo(map);
 
-let events=[],markers={},activeId=null,filter="all",sort="people",nextRefresh=0;
+// Weather radar (RainViewer) + 0–100 opacity slider
+let radarLayer=null,radarOpacity=0.6,radarColor=6; // color 6 = NEXRAD Level III
+const radarCtl=L.control({position:'topright'});
+radarCtl.onAdd=function(){const d=L.DomUtil.create('div','radarctl');
+  d.innerHTML=`<div class="rc-head"><span class="rc-title">Weather radar</span><span class="rc-toggle"></span></div>
+    <div class="rc-body">
+      <div class="rc-time-row"><span class="rc-time" id="radarTime">loading…</span></div>
+      <input type="range" min="0" max="100" value="60" id="radarSlider" aria-label="Radar opacity">
+      <div class="rc-foot"><span>Opacity</span><span id="radarPct">60%</span></div>
+    </div>`;
+  L.DomEvent.disableClickPropagation(d);L.DomEvent.disableScrollPropagation(d);
+  d.querySelector('.rc-head').addEventListener('click',()=>d.classList.toggle('collapsed'));
+  if(window.innerWidth<=560)d.classList.add('collapsed');
+  return d;};
+radarCtl.addTo(map);
+document.getElementById('radarSlider').addEventListener('input',e=>{
+  radarOpacity=+e.target.value/100;
+  document.getElementById('radarPct').textContent=e.target.value+'%';
+  if(radarLayer)radarLayer.setOpacity(radarOpacity);
+});
+async function initRadar(){
+  try{
+    const r=await fetch('https://api.rainviewer.com/public/weather-maps.json',{cache:'no-store'});
+    const j=await r.json();
+    const past=(j.radar&&j.radar.past)||[];
+    if(!past.length)throw 0;
+    const f=past[past.length-1];
+    const url=`${j.host}${f.path}/256/{z}/{x}/{y}/${radarColor}/1_1.png`;
+    if(radarLayer)map.removeLayer(radarLayer);
+    radarLayer=L.tileLayer(url,{opacity:radarOpacity,zIndex:2,maxNativeZoom:7,maxZoom:18,errorTileUrl:'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==',attribution:'Radar &copy; RainViewer'});
+    radarLayer.addTo(map);
+    const el=document.getElementById('radarTime');
+    if(el)el.textContent=new Date(f.time*1000).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){const el=document.getElementById('radarTime');if(el)el.textContent='unavailable';}
+}
+initRadar();
+setInterval(initRadar,5*60000);
+
+let events=[],markers={},activeId=null,filter="all",sort="old",nextRefresh=0;
 let home=null,homeMarker=null;
 
 const fmt=n=>n.toLocaleString('en-US');
+function compact(n){n=Math.round(n);if(n>=1e6)return (n/1e6).toFixed(1)+'M';if(n>=1e4)return (n/1e3).toFixed(1)+'k';return n.toLocaleString('en-US');}
+function fmtDur(m){if(m<1)return'0m';if(m<60)return Math.round(m)+'m';const h=Math.floor(m/60),r=Math.round(m%60);return r?h+'h '+r+'m':h+'h';}
+function updateCmin(){const el=document.getElementById('sCmin');if(!el)return;
+  if(!events.length){el.textContent='—';return;}
+  const now=Date.now();
+  const cmin=events.reduce((s,e)=>s+e.numPeople*((now-e.startTime)/60000),0);
+  const cust=events.reduce((s,e)=>s+e.numPeople,0);
+  el.textContent=cust?fmtDur(cmin/cust):'—';}
 const isUn=e=>(e.status||"").toLowerCase()!=="assigned";
 function rel(ms){const d=Math.abs(Date.now()-ms),m=Math.round(d/60000);
   if(m<1)return"just now";if(m<60)return m+"m";const h=Math.floor(m/60),r=m%60;return r?`${h}h ${r}m`:`${h}h`;}
@@ -350,6 +452,8 @@ function miles(a,b,c,d){const R=3958.8,t=x=>x*Math.PI/180;
   return R*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q));}
 function distTo(e){return home?miles(home.lat,home.lng,e.latitude,e.longitude):null;}
 function markerSize(n){return Math.max(15,Math.min(46,11+Math.sqrt(n)*3.2));}
+function ageRank(start){const m=(Date.now()-start)/60000;return m>=180?3:m>=120?2:m>=10?1:0;}
+function styleKey(e){return ageRank(e.startTime)+'|'+etrInfo(e).state;}
 
 // color/shape by how long it's been out
 function ageStyle(start){const min=(Date.now()-start)/60000;
@@ -378,7 +482,7 @@ function drawMarkers(list){
   list.forEach(e=>{
     const s=markerSize(e.numPeople);
     const icon=L.divIcon({html:markerHtml(e,s),className:'',iconSize:[s,s],iconAnchor:[s/2,s/2]});
-    const m=L.marker([e.latitude,e.longitude],{icon,people:e.numPeople});
+    const m=L.marker([e.latitude,e.longitude],{icon,people:e.numPeople,ev:e,_sk:styleKey(e)});
     const un=isUn(e),et=etrInfo(e),d=distTo(e);
     m.bindPopup(`<div class="pop"><h3>${fmt(e.numPeople)} customer${e.numPeople===1?'':'s'}
       <span class="pst ${un?'un':'as'}">${un?'Awaiting crew':'Crew assigned'}</span></h3>
@@ -395,6 +499,15 @@ function drawMarkers(list){
   });
 }
 
+function refreshMarkerStyles(){
+  let changed=false;
+  events.forEach(e=>{const m=markers[e.id];if(!m)return;
+    const sk=styleKey(e);
+    if(m.options._sk!==sk){const s=markerSize(e.numPeople);
+      m.setIcon(L.divIcon({html:markerHtml(e,s),className:'',iconSize:[s,s],iconAnchor:[s/2,s/2]}));
+      m.options._sk=sk;changed=true;}});
+  if(changed&&clusterGroup.refreshClusters)clusterGroup.refreshClusters();
+}
 function drawList(){
   let list=events.slice();
   if(filter==="un")list=list.filter(isUn);
@@ -455,6 +568,7 @@ function drawStats(){
   document.getElementById('sMax').textContent=fmt(max);
   document.getElementById('sPassed').textContent=passed;
   document.getElementById('sMed').textContent=med?rel(Date.now()-med):'—';
+  updateCmin();
 }
 
 // ---- Location ----
@@ -529,17 +643,23 @@ async function load(){
   if(home)showNearest(document.querySelector('#lresult b')?.textContent||'Your location');
   if(activeId&&!events.find(e=>e.id===activeId))activeId=null;
   btn.disabled=false;ic.classList.remove('spin');
-  nextRefresh=Date.now()+REFRESH_MS;
+  nextRefresh=Date.now()+refreshMs;
 }
 function banner(show){
   const b=document.getElementById('banner');b.className='banner'+(show?' show warn':'');
   if(show)b.innerHTML='⚠ Live feed unreachable (browser CORS + proxy both blocked). Showing sample data so you can see the display.';
 }
 
-setInterval(load,REFRESH_MS);
+let refreshMs=600000,refreshTimer=null;
+function startRefresh(){if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(load,refreshMs);nextRefresh=Date.now()+refreshMs;}
+document.getElementById('updSel').onchange=e=>{refreshMs=+e.target.value;startRefresh();e.target.blur();};
+startRefresh();
 setInterval(()=>{const s=Math.max(0,Math.round((nextRefresh-Date.now())/1000));
-  document.getElementById('countdown').textContent='next in '+s+'s';},1000);
-setInterval(()=>{if(events.length){drawMarkers(events);drawList();drawStats();}},30000);
+  const disp=s>=60?Math.floor(s/60)+'m '+String(s%60).padStart(2,'0')+'s':s+'s';
+  document.getElementById('countdown').textContent='next in '+disp;
+  updateCmin();},1000);
+setInterval(()=>{if(events.length){drawList();drawStats();}},30000);
+setInterval(()=>{if(events.length)refreshMarkerStyles();},2000);
 
 document.getElementById('filter').onclick=e=>{const b=e.target.closest('button');if(!b)return;
   filter=b.dataset.f;document.querySelectorAll('#filter button').forEach(x=>x.classList.toggle('on',x===b));drawList();};
@@ -548,6 +668,12 @@ document.getElementById('sort').onchange=e=>{sort=e.target.value;
     document.getElementById('lresult').innerHTML='Set your location above to sort by distance.';}
   drawList();};
 document.getElementById('refreshBtn').onclick=()=>load();
+
+const TSIZES=[['XS',.8],['S',.9],['M',1],['L',1.2],['XL',1.45]];
+let tsizeIdx=1;
+function applyTsize(){document.documentElement.style.setProperty('--fs',TSIZES[tsizeIdx][1]);document.getElementById('tsizeLvl').textContent=TSIZES[tsizeIdx][0];}
+document.getElementById('tsizeBtn').onclick=()=>{tsizeIdx=(tsizeIdx+1)%TSIZES.length;applyTsize();};
+applyTsize();
 
 load();
 </script>
