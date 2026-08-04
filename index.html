@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#162E50">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NES Outages">
 <title>NES Outage Monitor</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.min.css">
@@ -19,13 +24,15 @@
     --sans:"Space Grotesk",system-ui,-apple-system,sans-serif;
     --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   }
-  *{box-sizing:border-box}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   html,body{margin:0;height:100%}
   body{background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
   #app{display:flex;flex-direction:column;height:100vh}
 
   /* Header */
-  header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:13px 22px;
+  header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+    padding:calc(13px + env(safe-area-inset-top,0px)) max(22px,env(safe-area-inset-right,0px)) 13px max(22px,env(safe-area-inset-left,0px));
     background:var(--navy);color:#fff;border-bottom:3px solid var(--cerulean);position:relative}
   header::after{content:"";position:absolute;left:0;bottom:-3px;height:3px;width:100%;
     background:linear-gradient(90deg,transparent,var(--orange),transparent);opacity:0}
@@ -166,11 +173,42 @@
   @media(max-width:900px){
     body{overflow:auto}
     #app{height:auto;min-height:100vh}
+    header{gap:12px 16px}
+    .status-line{order:3;flex-basis:100%;gap:14px}
+    .refresh-btn{padding:9px 14px;min-height:40px}
     .stats{grid-template-columns:1fr 1fr}
+    .stat{padding:12px 15px}
     .stat.hero{grid-column:1/-1}
+    .stat .value{font-size:26px}
+    .stat.hero .value{font-size:34px}
     .main{grid-template-columns:1fr;height:auto}
-    #map{height:52vh;min-height:320px}
+    #map{height:50vh;min-height:300px}
     .panel{border-left:none;border-top:1px solid var(--line)}
+    .list{max-height:none;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+    .locate input{font-size:16px;padding:12px 12px}
+    .locate .go{padding:0 18px;min-height:46px;font-size:13px}
+    .locate .me{padding:11px 13px;min-height:42px;font-size:12px}
+    .controls{gap:8px}
+    .seg{flex-basis:100%}
+    .seg button{flex:1;padding:11px 6px;font-size:11.5px;text-align:center;white-space:nowrap}
+    select.sort{margin-left:0;flex-basis:100%;padding:11px 10px;font-size:13px}
+    .item{padding:13px 12px}
+    .legend{font-size:10.5px;padding:8px 10px;line-height:1.6}
+    .leaflet-popup-content{margin:12px 14px;max-width:70vw}
+    .leaflet-control-zoom{margin-bottom:70px!important}
+  }
+  @media(max-width:560px){
+    header{padding-top:calc(11px + env(safe-area-inset-top,0px));gap:10px 14px}
+    .title{font-size:18px}
+    .eyebrow{font-size:9.5px;letter-spacing:.18em}
+    .status-line{font-size:11px;gap:12px}
+    #countdown{display:none}
+    .stat{padding:11px 13px}
+    .stat .label{font-size:9.5px;letter-spacing:.1em}
+    .stat .value{font-size:22px}
+    .stat.hero .value{font-size:30px}
+    .split{flex-direction:column;gap:4px}
+    #map{height:46vh;min-height:280px}
   }
 </style>
 </head>
@@ -252,7 +290,7 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.04b";
+const VERSION="26.08.04c";
 document.getElementById('ver').innerHTML=VERSION.slice(0,-1)+'<span class="ver-b">'+VERSION.slice(-1)+'</span>';
 
 const AGE={green:'#18b26b',blue:'#2f8fd6',red:'#e23d4c'};
