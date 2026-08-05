@@ -83,7 +83,17 @@
   .sw-un{background:var(--orange)} .sw-as{background:var(--cerulean)}
 
   /* Body */
-  .main{flex:1;display:grid;grid-template-columns:1fr 380px;min-height:0}
+  .main{flex:1;display:grid;grid-template-columns:1fr 380px;min-height:0;position:relative}
+  .main.collapsed{grid-template-columns:1fr}
+  .main.collapsed .panel{display:none}
+  .side-toggle{position:absolute;top:50%;right:380px;transform:translateY(-50%);z-index:600;
+    width:22px;height:58px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    background:var(--navy);color:#fff;border:1px solid rgba(255,255,255,.16);border-right:none;
+    border-radius:9px 0 0 9px;box-shadow:-2px 0 9px rgba(22,46,80,.2);font-size:calc(15px*var(--fs));line-height:1}
+  .side-toggle:hover{background:#20375f}
+  .side-toggle::before{content:"\203A"}
+  .main.collapsed .side-toggle{right:0}
+  .main.collapsed .side-toggle::before{content:"\2039"}
   #map{height:100%;width:100%;background:#e3eaf1}
   .panel{background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
 
@@ -221,6 +231,9 @@
     .main{grid-template-columns:1fr;height:auto}
     #map{height:50vh;min-height:300px}
     .panel{border-left:none;border-top:1px solid var(--line)}
+    .side-toggle{display:none}
+    .main.collapsed{grid-template-columns:1fr}
+    .main.collapsed .panel{display:flex}
     .list{max-height:none;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
     .locate input{font-size:calc(16px*var(--fs));padding:12px 12px}
     .locate .go{padding:0 18px;min-height:46px;font-size:calc(13px*var(--fs))}
@@ -321,6 +334,7 @@
       </div>
       <div class="list" id="list"></div>
     </div>
+    <button class="side-toggle" id="sideToggle" title="Show/hide list" aria-label="Toggle list panel"></button>
   </div>
 </div>
 
@@ -330,7 +344,7 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.05b";
+const VERSION="26.08.05d";
 document.getElementById('ver').innerHTML=VERSION.slice(0,-1)+'<span class="ver-b">'+VERSION.slice(-1)+'</span>';
 
 const AGE={green:'#18b26b',blue:'#2f8fd6',red:'#e23d4c'};
@@ -376,8 +390,8 @@ legend.onAdd=function(){const d=L.DomUtil.create('div','legend');
   d.innerHTML='<div class="lg-head"><span class="lg-title">Legend</span><span class="lg-toggle"></span></div>'
     +'<div class="lg-body">'
     +'<div class="lg-t">Time out</div>'
-    +'<div class="lg-row"><span class="lg-mk grn"></span>Under 10 min</div>'
-    +'<div class="lg-row"><span class="lg-mk blu"></span>10 min – 2 hr</div>'
+    +'<div class="lg-row"><span class="lg-mk grn"></span>Under 1 hr</div>'
+    +'<div class="lg-row"><span class="lg-mk blu"></span>1 – 2 hr</div>'
     +'<div class="lg-row"><span class="lg-mk red"></span>2 – 3 hr</div>'
     +'<div class="lg-row"><span class="lg-tri"></span>Over 3 hr</div>'
     +'<div class="lg-sep"></div>'
@@ -447,12 +461,12 @@ function miles(a,b,c,d){const R=3958.8,t=x=>x*Math.PI/180;
   return R*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q));}
 function distTo(e){return home?miles(home.lat,home.lng,e.latitude,e.longitude):null;}
 function markerSize(n){return Math.max(15,Math.min(46,11+Math.sqrt(n)*3.2));}
-function ageRank(start){const m=(Date.now()-start)/60000;return m>=180?3:m>=120?2:m>=10?1:0;}
+function ageRank(start){const m=(Date.now()-start)/60000;return m>=180?3:m>=120?2:m>=60?1:0;}
 function styleKey(e){return ageRank(e.startTime)+'|'+etrInfo(e).state;}
 
 // color/shape by how long it's been out
 function ageStyle(start){const min=(Date.now()-start)/60000;
-  if(min<10)return{shape:'circle',color:AGE.green};
+  if(min<60)return{shape:'circle',color:AGE.green};
   if(min<120)return{shape:'circle',color:AGE.blue};
   if(min<180)return{shape:'circle',color:AGE.red};
   return{shape:'triangle',color:AGE.red};}
@@ -654,6 +668,11 @@ document.getElementById('sort').onchange=e=>{sort=e.target.value;
     document.getElementById('lresult').innerHTML='Set your location above to sort by distance.';}
   drawList();};
 document.getElementById('refreshBtn').onclick=()=>load();
+
+document.getElementById('sideToggle').onclick=()=>{
+  document.querySelector('.main').classList.toggle('collapsed');
+  setTimeout(()=>map.invalidateSize(),60);
+};
 
 const TSIZES=[['XS',.8],['S',.9],['M',1],['L',1.2],['XL',1.45]];
 let tsizeIdx=1;
