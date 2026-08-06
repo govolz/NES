@@ -62,6 +62,11 @@
   .upd:focus{outline:none;border-color:var(--cerulean-l)}
   .upd option{color:#1a2a40}
   .tsize{display:flex;align-items:center;gap:5px;font-family:var(--mono);color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:7px;padding:6px 10px;cursor:pointer;line-height:1}
+  .statstoggle{display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:7px;padding:6px 10px;cursor:pointer;line-height:1}
+  .statstoggle:hover{border-color:var(--cerulean-l);background:rgba(70,199,236,.14)}
+  .statstoggle .st-chev{font-size:calc(13px*var(--fs));transition:transform .2s;display:inline-block}
+  .hidestats .statstoggle .st-chev{transform:rotate(180deg)}
+  .hidestats .stats{display:none}
   .tsize:hover{border-color:var(--cerulean-l);background:rgba(70,199,236,.14)}
   .tsize .ts-a{font-weight:700;font-size:calc(15px*var(--fs))}
   .tsize .ts-lvl{font-size:calc(10px*var(--fs));color:var(--cerulean-l);font-weight:600}
@@ -275,6 +280,7 @@
       <span id="updated">—</span>
       <span id="countdown"></span>
     </div>
+    <button class="statstoggle" id="statsToggle" title="Show/hide stats" aria-label="Toggle stats"><span class="st-chev">⌄</span></button>
     <button class="tsize" id="tsizeBtn" title="Text size"><span class="ts-a">A</span><span class="ts-lvl" id="tsizeLvl">S</span></button>
     <select class="upd" id="updSel" title="Auto-update interval">
       <option value="60000">1 min</option>
@@ -344,7 +350,7 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.05d";
+const VERSION="26.08.06b";
 document.getElementById('ver').innerHTML=VERSION.slice(0,-1)+'<span class="ver-b">'+VERSION.slice(-1)+'</span>';
 
 const AGE={green:'#18b26b',blue:'#2f8fd6',red:'#e23d4c'};
@@ -668,6 +674,11 @@ document.getElementById('sort').onchange=e=>{sort=e.target.value;
     document.getElementById('lresult').innerHTML='Set your location above to sort by distance.';}
   drawList();};
 document.getElementById('refreshBtn').onclick=()=>load();
+
+document.getElementById('statsToggle').onclick=()=>{
+  document.getElementById('app').classList.toggle('hidestats');
+  setTimeout(()=>map.invalidateSize(),60);
+};
 
 document.getElementById('sideToggle').onclick=()=>{
   document.querySelector('.main').classList.toggle('collapsed');
