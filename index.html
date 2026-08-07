@@ -205,6 +205,16 @@
 
   .homepin{width:20px;height:20px;border-radius:50% 50% 50% 0;background:var(--home);transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 
+  .mapmax-btn{position:absolute;right:10px;bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:660;
+    width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    background:var(--navy);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:8px;box-shadow:0 2px 8px rgba(22,46,80,.3);padding:0}
+  .mapmax-btn:hover{background:#20375f}
+  .mapmax-btn svg{width:18px;height:18px}
+  .mapmax-btn .ic-con{display:none}
+  #map.mapmax{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999}
+  #map.mapmax .ic-exp{display:none}
+  #map.mapmax .ic-con{display:block}
+
   .logo{height:24px;width:auto;vertical-align:middle;display:inline-block;filter:brightness(0) invert(1)}
   .radarctl{background:var(--navy);color:#fff;border-radius:10px;padding:9px 11px;width:174px;
     box-shadow:0 2px 13px rgba(22,46,80,.3);font-family:var(--mono)}
@@ -350,7 +360,7 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.06d";
+const VERSION="26.08.06e";
 document.getElementById('ver').innerHTML=VERSION.slice(0,-1)+'<span class="ver-b">'+VERSION.slice(-1)+'</span>';
 
 const AGE={green:'#18b26b',blue:'#2f8fd6',red:'#e23d4c'};
@@ -446,6 +456,17 @@ async function initRadar(){
 }
 initRadar();
 setInterval(initRadar,5*60000);
+
+// Maximize map to full screen extent (CSS-based; no Fullscreen API needed)
+const maxBtn=L.DomUtil.create('button','mapmax-btn');
+maxBtn.type='button';maxBtn.setAttribute('title','Maximize map');maxBtn.setAttribute('aria-label','Maximize map');
+maxBtn.innerHTML=`<svg class="ic-exp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>`
+  +`<svg class="ic-con" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"/></svg>`;
+map.getContainer().appendChild(maxBtn);
+L.DomEvent.disableClickPropagation(maxBtn);
+const mapEl=document.getElementById('map');
+maxBtn.addEventListener('click',()=>{mapEl.classList.toggle('mapmax');setTimeout(()=>map.invalidateSize(),80);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mapEl.classList.contains('mapmax')){mapEl.classList.remove('mapmax');setTimeout(()=>map.invalidateSize(),80);}});
 
 let events=[],markers={},activeId=null,filter="all",sort="old",nextRefresh=0;
 let home=null,homeMarker=null;
