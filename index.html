@@ -152,6 +152,7 @@
   .item .id{color:var(--muted-2)}
   .empty{padding:50px 24px;text-align:center;color:var(--muted)}
   .empty .big{font-size:calc(15px*var(--fs));color:var(--age-green);font-weight:600;margin-bottom:6px}
+  .empty-note{margin-top:12px;font-size:calc(11px*var(--fs));color:var(--muted-2);line-height:1.5}
 
   /* Banner */
   .banner{display:none;padding:9px 22px;font-family:var(--mono);font-size:calc(12px*var(--fs));align-items:center;gap:10px;border-bottom:1px solid var(--line)}
@@ -288,6 +289,7 @@
     <div class="status-line">
       <span class="live-wrap"><span class="dot-live" id="liveDot"></span><span id="liveText">Connecting…</span></span>
       <span id="updated">—</span>
+      <span id="dataTime"></span>
       <span id="countdown"></span>
     </div>
     <button class="statstoggle" id="statsToggle" title="Show/hide stats" aria-label="Toggle stats"><span class="st-chev">⌄</span></button>
@@ -360,7 +362,7 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.06e";
+const VERSION="26.08.07g";
 document.getElementById('ver').innerHTML=VERSION.slice(0,-1)+'<span class="ver-b">'+VERSION.slice(-1)+'</span>';
 
 const AGE={green:'#18b26b',blue:'#2f8fd6',red:'#e23d4c'};
@@ -469,6 +471,7 @@ maxBtn.addEventListener('click',()=>{mapEl.classList.toggle('mapmax');setTimeout
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mapEl.classList.contains('mapmax')){mapEl.classList.remove('mapmax');setTimeout(()=>map.invalidateSize(),80);}});
 
 let events=[],markers={},activeId=null,filter="all",sort="old",nextRefresh=0;
+let lastMode='',lastLiveOk=0,prevSig='',lastChangeAt=Date.now();
 let home=null,homeMarker=null;
 
 const fmt=n=>n.toLocaleString('en-US');
@@ -554,7 +557,8 @@ function drawList(){
 
   const el=document.getElementById('list');
   document.getElementById('listCount').textContent=list.length?`${list.length} shown`:'';
-  if(!events.length){el.innerHTML=`<div class="empty"><div class="big">All clear</div>No active outages on the NES system right now.</div>`;return;}
+  if(!events.length){const note=lastMode!=='offline'?`<div class="empty-note">If outages are expected, the feed may be down — verify at nespower.com.</div>`:'';
+    el.innerHTML=`<div class="empty"><div class="big">All clear</div>No active outages reported.${note}</div>`;return;}
   if(!list.length){el.innerHTML=`<div class="empty">No outages match this filter.</div>`;return;}
 
   el.innerHTML=list.map(e=>{
@@ -652,9 +656,14 @@ document.getElementById('meBtn').onclick=()=>{
 };
 
 // ---- Load with proxy fallback ----
+const FETCH_TIMEOUT=6000,STALE_MS=40*60000;
+function fetchWithTimeout(url){
+  const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),FETCH_TIMEOUT);
+  return fetch(url,{cache:'no-store',signal:ctl.signal}).finally(()=>clearTimeout(t));
+}
 async function fetchEvents(){
-  try{const r=await fetch(API,{cache:'no-store'});if(!r.ok)throw 0;return{data:await r.json(),mode:'direct'};}catch(e){}
-  try{const r=await fetch(PROXY(API),{cache:'no-store'});if(!r.ok)throw 0;return{data:await r.json(),mode:'proxy'};}catch(e){}
+  try{const r=await fetchWithTimeout(API);if(!r.ok)throw 0;return{data:await r.json(),mode:'direct'};}catch(e){}
+  try{const r=await fetchWithTimeout(PROXY(API));if(!r.ok)throw 0;return{data:await r.json(),mode:'proxy'};}catch(e){}
   return{data:sampleData(),mode:'offline'};
 }
 async function load(){
@@ -662,21 +671,38 @@ async function load(){
   btn.disabled=true;ic.classList.add('spin');
   const {data,mode}=await fetchEvents();
   events=Array.isArray(data)?data:sampleData();
-  const live=mode!=='offline';
+  const live=mode!=='offline';lastMode=mode;
+  if(live){
+    lastLiveOk=Date.now();
+    const sig=events.map(e=>e.id+':'+e.numPeople+':'+e.status+':'+e.etrTime+':'+e.lastUpdatedTime).sort().join('|');
+    if(sig!==prevSig){prevSig=sig;lastChangeAt=Date.now();}
+  }
+  const srcNewest=events.reduce((m,e)=>Math.max(m,e.lastUpdatedTime||0),0);
   document.getElementById('header').classList.toggle('live',live);
   document.getElementById('liveDot').classList.toggle('stale',!live);
   document.getElementById('liveText').textContent=mode==='direct'?'Live':mode==='proxy'?'Live · via proxy':'Sample (offline)';
   document.getElementById('updated').textContent='Updated '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  banner(mode==='offline');
+  document.getElementById('dataTime').textContent=live&&srcNewest?'· source '+new Date(srcNewest).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'';
+  setHealth({live,srcNewest,count:events.length});
   drawStats();drawMarkers(events);drawList();
   if(home)showNearest(document.querySelector('#lresult b')?.textContent||'Your location');
   if(activeId&&!events.find(e=>e.id===activeId))activeId=null;
   btn.disabled=false;ic.classList.remove('spin');
   nextRefresh=Date.now()+refreshMs;
 }
-function banner(show){
-  const b=document.getElementById('banner');b.className='banner'+(show?' show warn':'');
-  if(show)b.innerHTML='⚠ Live feed unreachable (browser CORS + proxy both blocked). Showing sample data so you can see the display.';
+function setHealth(h){
+  const b=document.getElementById('banner');
+  if(!h.live){
+    b.className='banner show warn';
+    b.innerHTML='⚠ Live feed unreachable — showing sample data.'+(lastLiveOk?' Last live update '+rel(lastLiveOk)+' ago.':'');
+    return;
+  }
+  if(h.count&&h.srcNewest&&(Date.now()-h.srcNewest)>STALE_MS){
+    b.className='banner show warn';
+    b.innerHTML='⚠ Feed reachable but the source hasn’t updated in '+rel(h.srcNewest)+' — data may be stale. Verify at nespower.com.';
+    return;
+  }
+  b.className='banner';
 }
 
 let refreshMs=600000,refreshTimer=null;
