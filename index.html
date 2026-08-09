@@ -74,7 +74,7 @@
   @keyframes spin{to{transform:rotate(360deg)}}
 
   /* Stats */
-  .stats{display:grid;grid-template-columns:1.5fr repeat(5,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
+  .stats{display:grid;grid-template-columns:1.5fr repeat(6,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
   .stat{background:var(--surface);padding:13px 20px;display:flex;flex-direction:column;gap:3px}
   .stat .label{font-family:var(--mono);font-size:calc(9.5px*var(--fs));letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2)}
   .stat .value{font-size:calc(23px*var(--fs));font-weight:600;line-height:1;letter-spacing:-.02em;color:var(--navy);font-variant-numeric:tabular-nums}
@@ -328,6 +328,8 @@
       <span class="value" id="sMed">—</span><span class="sub">so far</span></div>
     <div class="stat"><span class="label">Weighted avg out</span>
       <span class="value" id="sCmin">—</span><span class="sub">min / customer · live</span></div>
+    <div class="stat"><span class="label">Customer-minutes</span>
+      <span class="value" id="sCustMin">—</span><span class="sub">total · live</span></div>
   </div>
 
   <div class="main">
@@ -369,7 +371,7 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.07b";
+const VERSION="26.08.08a";
 const FETCH_TIMEOUT=6000,STALE_MS=40*60000;
 document.getElementById('ver').innerHTML=VERSION.slice(0,-1)+'<span class="ver-b">'+VERSION.slice(-1)+'</span>';
 
@@ -514,12 +516,13 @@ let home=null,homeMarker=null;
 const fmt=n=>n.toLocaleString('en-US');
 function compact(n){n=Math.round(n);if(n>=1e6)return (n/1e6).toFixed(1)+'M';if(n>=1e4)return (n/1e3).toFixed(1)+'k';return n.toLocaleString('en-US');}
 function fmtDur(m){if(m<1)return'0m';if(m<60)return Math.round(m)+'m';const h=Math.floor(m/60),r=Math.round(m%60);return r?h+'h '+r+'m':h+'h';}
-function updateCmin(){const el=document.getElementById('sCmin');if(!el)return;
-  if(!events.length){el.textContent='—';return;}
+function updateCmin(){const el=document.getElementById('sCmin'),el2=document.getElementById('sCustMin');
+  if(!events.length){if(el)el.textContent='—';if(el2)el2.textContent='—';return;}
   const now=Date.now();
   const cmin=events.reduce((s,e)=>s+e.numPeople*((now-e.startTime)/60000),0);
   const cust=events.reduce((s,e)=>s+e.numPeople,0);
-  el.textContent=cust?fmtDur(cmin/cust):'—';}
+  if(el)el.textContent=cust?fmtDur(cmin/cust):'—';
+  if(el2)el2.textContent=compact(cmin);}
 const isUn=e=>(e.status||"").toLowerCase()!=="assigned";
 function rel(ms){const d=Math.abs(Date.now()-ms),m=Math.round(d/60000);
   if(m<1)return"just now";if(m<60)return m+"m";const h=Math.floor(m/60),r=m%60;return r?`${h}h ${r}m`:`${h}h`;}
