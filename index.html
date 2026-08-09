@@ -323,7 +323,7 @@
     <div class="stat"><span class="label">Largest outage</span>
       <span class="value" id="sMax">—</span><span class="sub">customers</span></div>
     <div class="stat"><span class="label">ETR passed</span>
-      <span class="value" id="sPassed">—</span><span class="sub">still restoring</span></div>
+      <span class="value" id="sPassed">—</span><span class="sub">customers past ETR</span></div>
     <div class="stat"><span class="label">Median duration</span>
       <span class="value" id="sMed">—</span><span class="sub">so far</span></div>
     <div class="stat"><span class="label">Weighted avg out</span>
@@ -371,7 +371,7 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.08a";
+const VERSION="26.08.08b";
 const FETCH_TIMEOUT=6000,STALE_MS=40*60000;
 document.getElementById('ver').innerHTML=VERSION.slice(0,-1)+'<span class="ver-b">'+VERSION.slice(-1)+'</span>';
 
@@ -633,14 +633,14 @@ function setActive(id,fly){
 function drawStats(){
   const total=events.reduce((s,e)=>s+e.numPeople,0);
   const max=events.reduce((m,e)=>Math.max(m,e.numPeople),0);
-  const passed=events.filter(e=>e.etrTime&&e.etrTime<Date.now()).length;
+  const passed=events.filter(e=>e.etrTime&&e.etrTime<Date.now()).reduce((s,e)=>s+e.numPeople,0);
   const durs=events.map(e=>Date.now()-e.startTime).sort((a,b)=>a-b);
   const med=durs.length?durs[Math.floor(durs.length/2)]:0;
   document.getElementById('sTotal').innerHTML=fmt(total)+'<span class="pulse"></span>';
   document.getElementById('sTotalSub').textContent=events.length?`across ${events.length} active event${events.length===1?'':'s'}`:'system clear';
   document.getElementById('sEvents').textContent=events.length;
   document.getElementById('sMax').textContent=fmt(max);
-  document.getElementById('sPassed').textContent=passed;
+  document.getElementById('sPassed').textContent=fmt(passed);
   document.getElementById('sMed').textContent=med?rel(Date.now()-med):'—';
   updateCmin();
 }
