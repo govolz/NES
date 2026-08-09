@@ -174,6 +174,7 @@
   .cluster.cl-red{background:rgba(226,61,76,.95)}
   .cluster.blink-slow{animation:blink 2s ease-in-out infinite}
   .cluster.blink-fast{animation:blink .55s ease-in-out infinite}
+  .cluster-tri-text{font-family:var(--mono);font-weight:600;font-size:calc(10px*var(--fs));fill:#fff}
 
   /* Popup */
   .leaflet-popup-content-wrapper{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:11px;box-shadow:0 10px 34px rgba(22,46,80,.22)}
@@ -371,7 +372,7 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.08b";
+const VERSION="26.08.08c";
 const FETCH_TIMEOUT=6000,STALE_MS=40*60000;
 document.getElementById('ver').innerHTML=VERSION.slice(0,-1)+'<span class="ver-b">'+VERSION.slice(-1)+'</span>';
 
@@ -409,8 +410,13 @@ const clusterGroup=L.markerClusterGroup({
       aMax=Math.max(aMax,ageRank(e.startTime));
       const st=etrInfo(e).state;eMax=Math.max(eMax,st==='passed'?2:st==='soon'?1:0);});
     const size=sum>=500?54:sum>=100?46:sum>=20?40:34;
-    const col=aMax>=2?'cl-red':aMax===1?'cl-blue':'cl-green';
     const bl=eMax===2?'blink-fast':eMax===1?'blink-slow':'';
+    if(aMax>=3){
+      const p=`${size/2},2 ${size-2},${size-2} 2,${size-2}`;
+      const html=`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" class="mksvg ${bl}"><polygon points="${p}" fill="#e23d4c" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><text class="cluster-tri-text" x="${size/2}" y="${(size*0.76).toFixed(0)}" text-anchor="middle">${fmt(sum)}</text></svg>`;
+      return L.divIcon({html,className:'',iconSize:[size,size]});
+    }
+    const col=aMax===2?'cl-red':aMax===1?'cl-blue':'cl-green';
     return L.divIcon({html:`<div class="cluster ${col} ${bl}" style="width:${size}px;height:${size}px"><span>${fmt(sum)}</span></div>`,className:'',iconSize:[size,size]});
   }
 });
