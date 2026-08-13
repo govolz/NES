@@ -374,7 +374,7 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.12e";
+const VERSION="26.08.13a";
 const FETCH_TIMEOUT=6000,STALE_MS=40*60000;
 const stressMode=/stress/i.test(location.hash);
 const STRESS_N=2200;
@@ -586,10 +586,9 @@ function ageStyle(start){const min=(Date.now()-start)/60000;
   return{shape:'triangle',color:AGE.red};}
 // blink by ETR proximity
 function etrInfo(e){if(!e.etrTime)return{txt:'ETR pending',state:'none'};
-  const diff=e.etrTime-Date.now();
-  if(diff<0)return{txt:'ETR passed '+rel(e.etrTime)+' ago',state:'passed'};
-  if(diff<=30*60000)return{txt:'ETR in '+rel(e.etrTime),state:'soon'};
-  return{txt:'ETR in '+rel(e.etrTime),state:'ok'};}
+  const t=new Date(e.etrTime).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),diff=e.etrTime-Date.now();
+  if(diff<0)return{txt:'ETR '+t+' · passed '+rel(e.etrTime)+' ago',state:'passed'};
+  return{txt:'ETR '+t+' · in '+rel(e.etrTime),state:diff<=30*60000?'soon':'ok'};}
 const blinkClass=state=>state==='passed'?'blink-fast':state==='soon'?'blink-slow':'';
 
 function markerHtml(e,s){
