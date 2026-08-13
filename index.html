@@ -63,6 +63,7 @@
   .upd option{color:#1a2a40}
   .tsize{display:flex;align-items:center;gap:5px;font-family:var(--mono);color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:7px;padding:6px 10px;cursor:pointer;line-height:1}
   .statstoggle{display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:7px;padding:6px 10px;cursor:pointer;line-height:1}
+  body.stormmode .mksvg{animation:none!important}
   .statstoggle:hover{border-color:var(--cerulean-l);background:rgba(70,199,236,.14)}
   .statstoggle .st-chev{font-size:calc(13px*var(--fs));transition:transform .2s;display:inline-block}
   .hidestats .statstoggle .st-chev{transform:rotate(180deg)}
@@ -91,7 +92,7 @@
   .main{flex:1;display:grid;grid-template-columns:1fr 380px;min-height:0;position:relative}
   .main.collapsed{grid-template-columns:1fr}
   .main.collapsed .panel{display:none}
-  .side-toggle{position:absolute;top:50%;right:380px;transform:translateY(-50%);z-index:600;
+  .side-toggle{position:absolute;top:50%;right:380px;transform:translateY(-50%);z-index:1001;
     width:22px;height:58px;display:flex;align-items:center;justify-content:center;cursor:pointer;
     background:var(--navy);color:#fff;border:1px solid rgba(255,255,255,.16);border-right:none;
     border-radius:9px 0 0 9px;box-shadow:-2px 0 9px rgba(22,46,80,.2);font-size:calc(15px*var(--fs));line-height:1}
@@ -373,8 +374,39 @@
 const API="https://utilisocial.io/datacapable/v2/p/NES/map/events";
 const PROXY=u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u);
 const REFRESH_MS=60000;
-const VERSION="26.08.10a";
+const VERSION="26.08.12e";
 const FETCH_TIMEOUT=6000,STALE_MS=40*60000;
+const stressMode=/stress/i.test(location.hash);
+const STRESS_N=2200;
+function genStressData(){
+  const now=Date.now(),arr=[];
+  const latMin=35.95,latMax=36.42,lngMin=-87.05,lngMax=-86.52;
+  for(let i=0;i<STRESS_N;i++){
+    const lat=latMin+Math.random()*(latMax-latMin),lng=lngMin+Math.random()*(lngMax-lngMin);
+    const r=Math.random();
+    const people=r>0.985?500+Math.floor(Math.random()*3000):r>0.9?50+Math.floor(Math.random()*450):1+Math.floor(Math.random()*40);
+    const ageMin=Math.random()*Math.random()*240; // skew toward fresh
+    const er=Math.random();
+    const etrTime=er<0.35?0:now+(Math.random()*180-40)*60000; // ~35% suppressed
+    arr.push({id:1000000+i,startTime:now-ageMin*60000,lastUpdatedTime:now,etrTime,numPeople:people,
+      status:Math.random()<0.5?'Assigned':'Unassigned',cause:'',identifier:'S'+i,
+      latitude:+lat.toFixed(5),longitude:+lng.toFixed(5)});
+  }
+  return arr;
+}
+function renderStress(){
+  events=genStressData();lastMode='stress';
+  document.getElementById('header').classList.remove('live');
+  document.getElementById('liveDot').classList.add('stale');
+  document.getElementById('liveText').textContent='STRESS TEST';
+  document.getElementById('updated').textContent='Generated '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('dataTime').textContent='';
+  const b=document.getElementById('banner');b.className='banner show warn';
+  b.innerHTML='⚠ STRESS TEST — '+fmt(events.length)+' synthetic outages, regenerating every 5 min. Remove #stress from the URL to exit.';
+  drawStats();drawMarkers(events);drawList();updateCmin();
+  if(home)showNearest(document.querySelector('#lresult b')?.textContent||'Your location');
+  activeId=null;nextRefresh=Date.now()+300000;
+}
 document.getElementById('ver').innerHTML=VERSION.slice(0,-1)+'<span class="ver-b">'+VERSION.slice(-1)+'</span>';
 
 const AGE={green:'#18b26b',blue:'#2f8fd6',red:'#e23d4c'};
@@ -522,6 +554,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&mapEl.classList.con
 
 let events=[],markers={},activeId=null,filter="all",sort="old",nextRefresh=0;
 let lastMode='',lastLiveOk=0,prevSig='',lastChangeAt=Date.now();
+const STORM_OUTAGES=200,STORM_CUSTOMERS=25000;
 let home=null,homeMarker=null;
 
 const fmt=n=>n.toLocaleString('en-US');
@@ -569,6 +602,7 @@ function markerHtml(e,s){
 
 function drawMarkers(list){
   clusterGroup.clearLayers();markers={};
+  const batch=[];
   list.forEach(e=>{
     const s=markerSize(e.numPeople);
     const icon=L.divIcon({html:markerHtml(e,s),className:'',iconSize:[s,s],iconAnchor:[s/2,s/2]});
@@ -583,8 +617,9 @@ function drawMarkers(list){
         <tr><td>Event</td><td>#${e.identifier||e.id}</td></tr>
       </table></div>`);
     m.on('click',()=>setActive(e.id,false));
-    markers[e.id]=m;clusterGroup.addLayer(m);
+    markers[e.id]=m;batch.push(m);
   });
+  clusterGroup.addLayers(batch);
 }
 
 function refreshMarkerStyles(){
@@ -607,12 +642,13 @@ function drawList(){
   if(sort==="dist"&&home)list.sort((a,b)=>distTo(a)-distTo(b));
 
   const el=document.getElementById('list');
-  document.getElementById('listCount').textContent=list.length?`${list.length} shown`:'';
+  const total=list.length,CAP=200,shown=total>CAP?list.slice(0,CAP):list;
+  document.getElementById('listCount').textContent=total?(total>CAP?`${CAP} of ${fmt(total)}`:`${total} shown`):'';
   if(!events.length){const note=lastMode!=='offline'?`<div class="empty-note">If outages are expected, the feed may be down — verify at nespower.com.</div>`:'';
     el.innerHTML=`<div class="empty"><div class="big">All clear</div>No active outages reported.${note}</div>`;return;}
   if(!list.length){el.innerHTML=`<div class="empty">No outages match this filter.</div>`;return;}
 
-  el.innerHTML=list.map(e=>{
+  el.innerHTML=shown.map(e=>{
     const un=isUn(e),et=etrInfo(e),a=ageStyle(e.startTime),d=distTo(e);
     const dot=a.shape==='triangle'?'<span class="sdot tri"></span>':`<span class="sdot" style="background:${a.color}"></span>`;
     return `<div class="item ${activeId===e.id?'active':''}" data-id="${e.id}">
@@ -643,6 +679,7 @@ function setActive(id,fly){
 
 function drawStats(){
   const total=events.reduce((s,e)=>s+e.numPeople,0);
+  document.body.classList.toggle('stormmode',events.length>STORM_OUTAGES||total>STORM_CUSTOMERS);
   const max=events.reduce((m,e)=>Math.max(m,e.numPeople),0);
   const passed=events.filter(e=>e.etrTime&&e.etrTime<Date.now()).reduce((s,e)=>s+e.numPeople,0);
   const durs=events.map(e=>Date.now()-e.startTime).sort((a,b)=>a-b);
@@ -651,7 +688,7 @@ function drawStats(){
   document.getElementById('sTotalSub').textContent=events.length?`across ${events.length} active event${events.length===1?'':'s'}`:'system clear';
   document.getElementById('sEvents').textContent=events.length;
   document.getElementById('sMax').textContent=fmt(max);
-  document.getElementById('sPassed').textContent=fmt(passed);
+  document.getElementById('sPassed').textContent=(events.length&&!events.some(e=>e.etrTime))?'n/a':fmt(passed);
   document.getElementById('sMed').textContent=med?rel(Date.now()-med):'—';
   updateCmin();
 }
@@ -717,6 +754,7 @@ async function fetchEvents(){
   return{data:sampleData(),mode:'offline'};
 }
 async function load(){
+  if(stressMode){renderStress();return;}
   const btn=document.getElementById('refreshBtn'),ic=document.getElementById('refreshIcon');
   btn.disabled=true;ic.classList.add('spin');
   const {data,mode}=await fetchEvents();
@@ -788,6 +826,8 @@ function applyTsize(){document.documentElement.style.setProperty('--fs',TSIZES[t
 document.getElementById('tsizeBtn').onclick=()=>{tsizeIdx=(tsizeIdx+1)%TSIZES.length;applyTsize();};
 applyTsize();
 
+window.addEventListener('hashchange',()=>location.reload());
+if(stressMode)setInterval(renderStress,300000);
 load();
 </script>
 </body>
